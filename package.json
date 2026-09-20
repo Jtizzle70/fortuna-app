@@ -1,0 +1,16 @@
+{
+  "name": "fortuna",
+  "version": "1.0.0",
+  "description": "Fortuna — investing & trading education app",
+  "scripts": {
+    "sync": "cap sync",
+    "add:ios": "cap add ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/ios": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "appId": "ceo.fortuna.app",
+  "appName": "Fortuna",
+  "webDir": "www",
+  "backgroundColor": "#0b1220",
+  "ios": {
+    "contentInset": "never",
+    "preferredContentMode": "mobile",
+    "scheme": "Fortuna"
+  }
+}
