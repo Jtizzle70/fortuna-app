@@ -1,33 +1,29 @@
 # Fortuna — iOS App (Capacitor)
 
-This wraps your existing `Fortuna.html` into a native iOS app. No Mac needed — you'll build in the cloud.
+Native iOS wrapper for Fortuna. Build in Appflow. No Mac required.
+
+## Current TestFlight target
+- Marketing version: **1.0**
+- Build number: **2**
+- Bundle id: `ceo.fortuna.app`
+- App Store listing name: Fortuna Coach
 
 ## What's inside
-- `www/index.html` — the app (iOS build: Stripe buy buttons are hidden to comply with Apple guideline 3.1.1; Pro purchased on fortuna.ceo still unlocks in the app since it shares the same Supabase account)
-- `capacitor.config.json` — app id `ceo.fortuna.app`, name "Fortuna"
-- `package.json` — Capacitor 6 dependencies
+- `www/index.html` — the app. `IS_IOS_APP = true` hides Stripe checkout (Apple 3.1.1). Pro bought on fortuna.ceo still unlocks here via the same Supabase login.
+- `www/privacy.html` and `www/terms.html` — in-app legal pages
+- `capacitor.config.json` — app id `ceo.fortuna.app`, name Fortuna
+- `ios/App` — Xcode project used by Appflow
 
-## Build in the cloud (no Mac)
+## After this repo update
+1. Open Ionic Appflow → Fortuna → Builds
+2. Start a new **iOS** production/App Store build from branch `main`
+3. Wait for success
+4. Deploy / upload the IPA to App Store Connect
+5. In TestFlight, the new build shows as **1.0 (2)**
+6. Install that build on the phone (pull to refresh TestFlight if it still shows 1.0 (1))
 
-### Option A — Ionic Appflow (easiest for Capacitor)
-1. Create a free GitHub account and push this folder to a new repo:
-   - On github.com → New repository → name it `fortuna-app` → upload these files (Add file → Upload files)
-2. Sign up at ionic.io/appflow (free tier works for a few builds)
-3. Connect your GitHub repo → create an **iOS build** (Appflow builds on their Macs)
-4. For App Store signing, Appflow walks you through connecting your Apple Developer account and generating certificates/profiles automatically
-5. Download the `.ipa` → upload to App Store Connect via Appflow's direct deploy, or Apple's Transporter web/API flow
-
-### Option B — Codemagic
-1. Push this folder to GitHub (same as above)
-2. Sign up at codemagic.io (free build minutes)
-3. It auto-detects Capacitor; pick the iOS workflow, connect your Apple Developer account (API key from App Store Connect → Users and Access → Keys)
-4. Run the build → it can publish straight to App Store Connect
-
-## Before submitting to the App Store
-- [ ] App icon: add `ios/App/App/Assets.xcassets` icons (the cloud build tools can generate from one 1024×1024 PNG — ask me and I'll make the icon)
-- [ ] Privacy policy live at https://fortuna.ceo/privacy.html (file provided separately — upload to Netlify)
-- [ ] App Store Connect: create the app record (bundle id `ceo.fortuna.app`), fill in description, keywords, screenshots (use an iPhone simulator screenshot service or take them from the build's emulator), age rating
-- [ ] In-App Purchase: Pro subscriptions in the iOS app must use Apple IAP (RevenueCat recommended). Until that's integrated, the iOS build hides purchase buttons — users subscribe on the web and it unlocks in-app. Decide before launch whether to ship v1 like this or add IAP first.
-
-## Updating the app later
-Replace `www/index.html` with a new Fortuna build, push to GitHub, trigger a new cloud build, submit the update in App Store Connect.
+## Rules already baked in
+- No in-app Stripe / Buy Pro checkout on iOS
+- Encryption compliance flag set: `ITSAppUsesNonExemptEncryption = false`
+- Launch screen is a dark Fortuna label (no missing Splash image)
+- Junk leftover files from the first upload were removed from the repo root
