@@ -1,0 +1,14 @@
+/* iOS notch / Dynamic Island / home indicator */
+header#topbar {
+  padding-top: calc(14px + env(safe-area-inset-top, 0px)) !important;
+}
+nav#tabbar {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+}
+.onboard {
+  padding-top: calc(28px + env(safe-area-inset-top, 0px)) !important;
+  padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)) !important;
+}
+#chatWrap {
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+}
