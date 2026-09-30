@@ -1052,7 +1052,7 @@ function spendQuiz(){
   if((S.credits||0) < QUIZ_COST) return false;
   S.credits -= QUIZ_COST; save(); return true;
 }
-function chartsAllowed(){ return !!S.pro; }
+function chartsAllowed(){ return IS_IOS_APP || !!S.pro; }
 
 /* ---------------- Illustrations (blue / white / black) ---------------- */
 var _BL="#0a6df5", _BL2="#0847a8", _WH="#ffffff", _GY="#39445a", _BG='<rect x="0" y="0" width="320" height="150" rx="16" fill="#0b0f15"/>';
@@ -1298,6 +1298,9 @@ function render(){
   if(!authed()){ app.innerHTML = authView(); window.scrollTo(0,0); return; }
   if(!S.onboarded){ app.innerHTML = onboardView(); window.scrollTo(0,0); return; }
   var r = cur();
+  if(IS_IOS_APP && (r.s==="pro" || r.s==="subscribe" || r.s==="credits" || r.s==="outofcredits")){
+    stack=[{s:"home"}]; r=cur();
+  }
   var top = topbar(r);
   var body = "";
   switch(r.s){
@@ -1340,7 +1343,7 @@ function topbar(r){
   var titles = {home:"Fortuna", learn:"Learn", path:"", lesson:"", quiz:"Quiz", result:"Result",
     lab:"Charts", ticket:"Trade Ticket", position:"Position", symbol:"", chart:"", journal:"Journal",
     jreview:"Trade Review", profile:"Profile", daily:"Daily Quiz", review:"Review",
-    pro:"Fortuna Pro", credits:"Credits", outofcredits:"Out of credits", subscribe:"Subscribe",
+    pro:"Fortuna", credits:"Credits", outofcredits:"Lessons", subscribe:"Fortuna",
     tour:"What each tab does"};
   var t = titles[r.s] || "Fortuna";
   var sub = "";
@@ -1355,9 +1358,11 @@ function topbar(r){
   if(canBack) h += '<button class="backbtn" onclick="A.back()">‹</button>';
   else h += '<span class="brandmark"><img src="'+LOGO_SRC+'" alt="Fortuna"></span>';
   h += '<div><div class="ttl">'+esc(t)+'</div>'+(sub?'<div class="sub">'+esc(sub)+'</div>':'')+'</div>';
+  if(!IS_IOS_APP){
   h += S.pro
     ? '<span class="pill" style="margin-left:auto">PRO</span>'
     : '<span class="credchip" style="margin-left:auto">\u25c8 '+(S.credits||0)+' credits</span>';
+  }
   h += '</header>';
   return h;
 }
@@ -1396,10 +1401,10 @@ function onboardView(){
           '<p>📈 <b>Charts</b> — practice with a $1,000 account and track every decision.</p>'+
         '</div>'+
         '<div style="height:8px"></div>'+
-        '<div class="pro-card" style="text-align:left; margin-bottom:12px">'+
-          '<b>🎟️ You start with 3 free credits</b>'+
-          '<div class="small" style="margin-top:6px; color:#cfe0f5">Each lesson costs 1 credit to learn. Go Pro for unlimited lessons and Charts.</div>'+
-        '</div>'+
+        (IS_IOS_APP ? '' : '<div class="pro-card" style="text-align:left; margin-bottom:12px">'+
+          '<b>You start with 3 free credits</b>'+
+          '<div class="small" style="margin-top:6px; color:#cfe0f5">Each lesson costs 1 credit to learn.</div>'+
+        '</div>')+
         '<button class="btn primary" onclick="A.startOnboarding()">Get started</button>'+
       '</div>';
   } else if(obStep===9){
@@ -1428,7 +1433,7 @@ function onboardView(){
           '<p>📓 <b>Feedback</b> — a journal that scores your decisions, not just your results.</p>'+
         '</div>'+
         '<div style="height:16px"></div>'+
-        '<button class="btn primary" onclick="A.ob(2)">Next</button>'+
+        '<button class="btn primary" onclick="A.ob(IS_IOS_APP?4:2)">Next</button>'+
         '<button class="btn ghost" onclick="A.ob(0)">Back</button>'+
       '</div>';
   } else if(obStep===2){
@@ -1502,7 +1507,7 @@ function homeView(){
   for(var i=0;i<p.lessons.length;i++){ if(!lessonDone(p.id,p.lessons[i].id)){ nextL=p.lessons[i]; break; } }
   if(!nextL) nextL = p.lessons[0];
   var nextDone = lessonDone(p.id, nextL.id);
-  var nextNote = nextDone ? "already passed \u2014 review anytime" : (S.pro ? "included \u00b7 Pro, no credits needed" : "costs 1 credit to learn");
+  var nextNote = nextDone ? "already passed \u2014 review anytime" : (IS_IOS_APP ? "free to learn" : (S.pro ? "included" : "costs 1 credit to learn"));
 
   var openPnl = 0; for(var j=0;j<S.open.length;j++) openPnl += pnl(S.open[j]);
   var hasDaily = S.daily.date !== todayStr() || !S.daily.done;
@@ -1534,8 +1539,8 @@ function homeView(){
       '</div>';
   }
 
-  html += '<div class="card tap" onclick="A.go(\'credits\')">'+
-    '<div class="between"><div class="grow"><div class="small muted">CREDITS</div><div style="font-weight:800;font-size:18px">'+(S.pro?"Unlimited (Pro)":((S.credits||0)+" available"))+'</div><div class="small muted">'+(S.pro?"No credits needed":"Each lesson costs 1 credit to learn")+'</div></div><span style="font-size:26px">🎟️</span></div>'+
+  if(!IS_IOS_APP) html += '<div class="card tap" onclick="A.go(\'credits\')">'+
+    '<div class="between"><div class="grow"><div class="small muted">CREDITS</div><div style="font-weight:800;font-size:18px">'+(S.pro?"Unlimited":((S.credits||0)+" available"))+'</div><div class="small muted">'+(S.pro?"No credits needed":"Each lesson costs 1 credit to learn")+'</div></div><span style="font-size:26px"></span></div>'+
     '</div>';
 
   html += '<h3>Practice account</h3>';
@@ -1551,8 +1556,8 @@ function homeView(){
     html += S.open.map(function(t){ return positionRow(t); }).join("");
   } else if(chartsAllowed()){
     html += '<div style="height:12px"></div><div class="card center"><div style="font-size:26px">📈</div><div class="muted">No open practice trades yet.</div><button class="btn ghost" onclick="A.go(\'lab\')">Open Charts</button></div>';
-  } else {
-    html += '<div style="height:12px"></div><div class="pro-card center"><div style="font-size:26px">📈</div><div style="font-weight:800;margin-top:4px">Charts is a Pro feature</div><div class="small muted" style="margin:4px 0 12px">Open practice trades, set stops and targets, and track your results.</div><button class="btn primary" onclick="A.go(\'pro\')">See Pro</button></div>';
+  } else if(!IS_IOS_APP) {
+    html += '<div style="height:12px"></div><div class="card center"><div style="font-size:26px">📈</div><div class="muted">Charts</div><button class="btn ghost" onclick="A.go(\'pro\')">See plans</button></div>';
   }
   return html;
 }
@@ -1576,7 +1581,7 @@ function learnView(){
       '<div class="between"><div class="row grow"><span style="font-size:24px">'+p.icon+'</span><div class="grow"><b>'+esc(p.name)+'</b><div class="small muted">'+esc(p.tag)+'</div></div></div>'+
       '<span class="pill">'+d+'/'+t+'</span></div>'+
       '<div class="bar"><i style="width:'+pct+'%"></i></div>'+
-      '<div class="prog">'+screens+' screens · '+ t +' quizzes · '+(S.pro?"unlimited lessons":"1 credit per lesson")+'</div>'+
+      '<div class="prog">'+screens+' screens · '+ t +' quizzes · '+(IS_IOS_APP?"free lessons":(S.pro?"unlimited lessons":"1 credit per lesson"))+'</div>'+
       '</div>';
   }).join("");
   return html;
@@ -1588,7 +1593,7 @@ function pathView(pid){
   var d = pathDone(pid), t = p.lessons.length, pct = t?Math.round(d/t*100):0;
   var unlocked = isLabUnlocked(pid);
   var html = '<h2>'+p.icon+' '+esc(p.name)+'</h2><p class="muted" style="margin-top:-8px">'+esc(p.tag)+'</p>';
-  html += '<div class="card"><div class="between"><span class="small muted">PROGRESS</span><span class="pill">'+d+'/'+t+'</span></div><div class="bar"><i style="width:'+pct+'%"></i></div><div class="prog">'+pct+'% complete · pass quizzes at 80%'+(S.pro?" · Pro":" · 1 credit per lesson")+'</div></div>';
+  html += '<div class="card"><div class="between"><span class="small muted">PROGRESS</span><span class="pill">'+d+'/'+t+'</span></div><div class="bar"><i style="width:'+pct+'%"></i></div><div class="prog">'+pct+'% complete · pass quizzes at 80%'+(IS_IOS_APP?"":(S.pro?" · included":" · 1 credit per lesson"))+'</div></div>';
   html += '<h3>Lessons</h3>';
   html += p.lessons.map(function(l,i){
     var done = lessonDone(pid,l.id);
@@ -1886,7 +1891,7 @@ var TOUR = [
  {tab:"home", icon:"\ud83c\udfe0", title:"Home", body:"Your daily starting point.", points:[
    "Continue your current lesson with one tap",
    "A 5-question daily quiz to keep your streak alive",
-   "Your credits balance \u2014 1 credit per lesson",
+   "Lessons, quizzes, and your practice progress",
    "Practice balance, open trades and lessons completed"]},
  {tab:"learn", icon:"\ud83d\udcda", title:"Learn", body:"Where you build the actual skill.", points:[
    "5 paths: Investing, Swing, Day Trading, Forex, Crypto",
@@ -2005,7 +2010,7 @@ function outOfCreditsView(){
 function profileView(){
   var pathsSelected = PATHS.filter(function(p){ return pathDone(p.id)>0; });
   var html = '<h2>Profile</h2>';
-  html += '<div class="card"><div class="row"><span class="brandmark" style="width:52px;height:52px"><img src="'+LOGO_SRC+'" alt=""></span><div class="grow"><b style="font-size:19px">'+esc(S.name)+'</b><div class="small muted">'+esc((S.account&&S.account.email)||"")+'</div></div>'+(S.pro?'<span class="pill">PRO</span>':'<span class="pill gray">FREE</span>')+'</div></div>';
+  html += '<div class="card"><div class="row"><span class="brandmark" style="width:52px;height:52px"><img src="'+LOGO_SRC+'" alt=""></span><div class="grow"><b style="font-size:19px">'+esc(S.name)+'</b><div class="small muted">'+esc((S.account&&S.account.email)||"")+'</div></div></div></div>';
   html += '<div class="card"><label>Username</label><input id="f_name" value="'+esc(S.name)+'" placeholder="Your name"><button class="btn" onclick="A.saveName()">Save name</button></div>';
   html += '<div class="grid2">'+
     '<div class="kpi"><div class="k">Virtual balance</div><div class="v" style="font-size:17px">'+money(S.balance)+'</div></div>'+
@@ -2018,13 +2023,17 @@ function profileView(){
     (pathsSelected.length? pathsSelected.map(function(p){ return '<span class="chip">'+p.icon+' '+esc(p.name)+'</span>'; }).join("") : '<span class="small muted">None started yet.</span>')+
     '<div style="height:10px"></div><button class="btn ghost" onclick="A.go(\'learn\')">Explore paths</button></div>';
   html += '<div class="card"><b>\u2753 What is in the app?</b><p class="small muted" style="margin:6px 0 10px">A quick guide to what each tab does and what it offers.</p><button class="btn ghost" onclick="A.startTour()">Show me the tabs</button></div>';
-  html += '<div class="card tap" onclick="A.go(\'credits\')"><div class="between"><div class="grow"><b>\ud83c\udf9f\ufe0f Credits</b><div class="small muted">'+(S.pro?"Unlimited with Pro":"1 credit per lesson")+'</div></div><span class="credchip">'+(S.pro?"\u221e":(S.credits||0))+'</span></div></div>';
-  html += '<div class="card"><div class="between"><div><b>Plan</b><div class="small muted">'+(S.pro?("Pro · $8.99/month"+(S.sub?" · renews "+fmtDate(S.sub.renewsAt):"")):"Free · 1 credit per lesson")+'</div></div>'+(S.pro?'<span class="pill">PRO</span>':'<span class="pill gray">FREE</span>')+'</div>'+
-    '<div style="height:10px"></div><button class="btn primary" onclick="A.go(\'pro\')">'+(S.pro?"Manage Pro":"Upgrade — $8.99/month")+'</button>'+
-    (S.pro?'<button class="btn danger" onclick="A.cancelSub()">Cancel Pro subscription</button>':'')+'</div>';
+  if(!IS_IOS_APP){
+  html += '<div class="card tap" onclick="A.go(\'credits\')"><div class="between"><div class="grow"><b>Credits</b><div class="small muted">'+(S.pro?"Unlimited":"1 credit per lesson")+'</div></div><span class="credchip">'+(S.pro?"\u221e":(S.credits||0))+'</span></div></div>';
+  html += '<div class="card"><div class="between"><div><b>Plan</b><div class="small muted">'+(S.pro?("Active"+(S.sub?" · renews "+fmtDate(S.sub.renewsAt):"")):"Free · 1 credit per lesson")+'</div></div></div>'+
+    '<div style="height:10px"></div><button class="btn primary" onclick="A.go(\'pro\')">'+(S.pro?"Manage plan":"See plans")+'</button>'+
+    (S.pro?'<button class="btn danger" onclick="A.cancelSub()">Cancel subscription</button>':'')+'</div>';
+  }
   html += '<div class="card"><b>About Fortuna</b><p class="small muted" style="margin:6px 0 0">A trading simulator for learning. Balances and prices are simulated practice data — no broker connection and no real orders.</p></div>';
   html += '<div style="height:12px"></div>';
   html += '<button class="btn danger" onclick="A.resetAccount()">Reset practice account</button>';
+  html += '<button class="btn danger" onclick="A.deleteAccount()">Delete Account</button>';
+  html += '<p class="dim small">Deletes your login, lessons, and practice data. This cannot be undone.</p>';
   html += '<button class="btn ghost" onclick="A.logout()">Log out</button>';
   html += '<p class="dim small center">Fortuna · paper trading simulator</p>';
   return html;
@@ -2049,7 +2058,7 @@ var A = {
   openLesson: function(pid,lid){
     // learning a lesson costs 1 credit for free users (first time only —
     // lessons you've completed stay open for free)
-    if(!S.pro && !lessonDone(pid,lid)){
+    if(!IS_IOS_APP && !S.pro && !lessonDone(pid,lid)){
       if((S.credits||0) < LESSON_COST){ stack=[{s:"learn"}]; setRoute({s:"outofcredits"}); return; }
       S.credits -= LESSON_COST; save();
     }
@@ -2261,6 +2270,32 @@ var A = {
     });
   },
   logout: function(){ if(sb) sb.auth.signOut(); S.session=false; save(); authMode="login"; authError=""; render(); },
+  deleteAccount: function(){
+    if(!window.confirm("Delete your account permanently? This removes your login, lessons, and practice data. This cannot be undone.")) return;
+    var typed = window.prompt("Type DELETE to confirm.");
+    if((typed||"").trim().toUpperCase() !== "DELETE"){ toast("Account not deleted."); return; }
+    var uid = S.account && S.account.id;
+    function finishLocal(){
+      try{ localStorage.removeItem(KEY); }catch(e){}
+      S = freshState();
+      authMode = "login"; authError = "";
+      stack = [{s:"home"}];
+      toast("Account deleted.");
+      render();
+    }
+    if(!sb || !uid){ finishLocal(); return; }
+    toast("Deleting account…");
+    sb.rpc("delete_own_account").then(function(r){
+      if(r && r.error){
+        return sb.from("profiles").delete().eq("id", uid).then(function(){
+          return sb.auth.signOut();
+        }).then(finishLocal);
+      }
+      return sb.auth.signOut().then(finishLocal);
+    }).catch(function(){
+      sb.from("profiles").delete().eq("id", uid).then(function(){ return sb.auth.signOut(); }).then(finishLocal);
+    });
+  },
   chatToggle: function(){
     if(chatLog.length===0) chatLog.push({who:"bot", text:chatIntro()});
     chatOpen=!chatOpen;
@@ -2472,9 +2507,9 @@ function kbSearch(q){
   return bestScore>0 ? best : null;
 }
 var GLOSS = [
- {k:["credit","credits","how many credits"],a:"Credits unlock lessons: each lesson costs 1 credit to learn, and you get 3 free when you join. Completed lessons stay free to review. Pro removes the limit entirely with unlimited lessons and Charts.",pid:"basics",lid:"b1"},
- {k:["pro","upgrade","subscription","premium","price","cost"],a:"Pro is $8.99 per month. It unlocks Charts (the practice trading section) and gives you unlimited quizzes with no credits. You can subscribe or cancel any time from Profile.",pid:"basics",lid:"b1"},
- {k:["charts","paper trad","simulator","simulate"],a:"Charts is the practice trading section (Pro). You open trades on simulated prices with stops, targets, position sizing and a journal that scores your decisions. No real money is involved.",pid:"swing",lid:"sw4"},
+ {k:["credit","credits","how many credits"],a:"On the iPhone app, lessons and Charts are free. There is no subscription.",pid:"basics",lid:"b1"},
+ {k:["pro","upgrade","subscription","premium","price","cost"],a:"Fortuna Coach on iPhone has no purchases and no subscription. Lessons and paper trading are included.",pid:"basics",lid:"b1"},
+ {k:["charts","paper trad","simulator","simulate"],a:"Charts is the practice trading section. You open trades on simulated prices with stops, targets, position sizing and a journal. No real money is involved.",pid:"swing",lid:"sw4"},
  {k:["stop loss","stop-loss","stop"],a:"A stop loss is an exit order that closes a trade if price moves against you. It caps your loss at a level you chose before entering.",pid:"swing",lid:"sw4"},
  {k:["take profit","profit target","target"],a:"A take profit is a target price where you close the trade to lock in gains. Set it before you enter, based on the chart.",pid:"swing",lid:"sw4"},
  {k:["1% rule","one percent","risk rule","position sizing","position size"],a:"The 1% rule: risk no more than 1% of your account on one trade. On a $1,000 account that is $10. Risk = distance from entry to stop, times quantity.",pid:"swing",lid:"sw3"},
